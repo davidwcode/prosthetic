@@ -41,9 +41,11 @@ class Encoder(nn.Module):
         signal = self.signals(input)
         print(signal.size())
         samples = torchhd.bind(signal, self.channels.weight.unsqueeze(0))
-
+        print(samples.size())
         samples = torchhd.multiset(samples)
+        print(samples.size())
         sample_hv = torchhd.ngrams(samples, n=N_GRAM_SIZE)
+        print(sample_hv.size())
         return torchhd.hard_quantize(sample_hv)
 
 

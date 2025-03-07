@@ -11,17 +11,22 @@ from pylsl import StreamInlet, resolve_stream, StreamOutlet, StreamInfo
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torchhd.models import Centroid
+from tqdm import tqdm
+import torchmetrics
 from dataset import EMGDataset
-state_dict = {
-    0: "relax",
-    1: "clench",
-    2: "spiderman"
-}
+from model import Encoder
+
+STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman"}
 
 NUM_SAMPLES = 2400
 NUM_CHANNELS = 4
 SAMPLES_PER_POINT = 6
 BATCH_SIZE = 1
+DIMENSIONS = 10000
+
+device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
+print("Using {} device".format(device))
 
 #Inlet
 streams = resolve_stream()
@@ -59,7 +64,7 @@ labels = np.concatenate([np.zeros(NUM_SAMPLES // SAMPLES_PER_POINT, dtype=Interr
 data = np.zeros((3 * NUM_SAMPLES, NUM_CHANNELS), dtype=np.float64)
 
 for i in range(3):
-    data[i*NUM_SAMPLES:(i+1)*NUM_SAMPLES] = calibrate(state_dict[i])
+    data[i*NUM_SAMPLES:(i+1)*NUM_SAMPLES] = calibrate(STATE_DICT[i])
 
 data.reshape(-1, SAMPLES_PER_POINT, 4)
 
@@ -67,9 +72,42 @@ data_tensor = torch.tensor(data, dtype=torch.float32)
 labels_tensor = torch.tensor(labels, dtype=torch.long)
 
 dataset = EMGDataset(data_tensor, labels_tensor)
-data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+train_size = int(len(dataset) * 0.8)
+test_size = len(dataset) - train_size
+train_ds, test_ds = torch.utils.data.random_split(dataset, [train_size, test_size])
+train_data_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+test_data_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
-for samples, labels in data_loader:
-    print(samples)
-    print(samples.size(), labels.size())
+# For demonstration, print one batch
+for samples, batch_labels in train_data_loader:
+    print("Sample batch of data:", samples)
+    print("Data shape:", samples.size(), "Labels shape:", batch_labels.size())
     break
+
+encoder = Encoder(DIMENSIONS, SAMPLES_PER_POINT, NUM_CHANNELS)
+encoder = encoder.to(device)
+num_classes = len(STATE_DICT)
+model = Centroid(DIMENSIONS, num_classes)
+model = model.to(device)
+
+with torch.no_grad():
+    for samples, targets in tqdm(train_data_loader, desc="Training"):
+        samples = samples.to(device)
+        targets = targets.to(device)
+
+        sample_hv = encoder(samples)
+        model.add(sample_hv, targets)
+
+accuracy = torchmetrics.Accuracy("multiclass", num_classes=num_classes)
+
+with torch.no_grad():
+    model.normalize()
+
+    for samples, targets in tqdm(test_data_loader, desc="Testing"):
+        samples = samples.to(device)
+
+        sample_hv = encoder(samples)
+        output = model(sample_hv, dot=True)
+        accuracy.update(output.cpu(), targets)
+
+print(f"Testing accuracy of {(accuracy.compute().item() * 100):.3f}%")
