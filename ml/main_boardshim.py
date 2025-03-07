@@ -25,7 +25,8 @@ NUM_CHANNELS = 4             # Number of EMG channels
 # a larger window may be needed. Adjust as needed:
 SAMPLES_PER_POINT = 50       
 BATCH_SIZE = 1
-STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman"}
+# STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman"}
+STATE_DICT = {0: "relax", 1: "clench"}
 SAMPLING_RATE = 500          # Hz, as assumed by your boardshim settings
 DIMENSIONS = 10000
 
@@ -201,6 +202,34 @@ def main():
                 accuracy.update(output.cpu(), targets)
 
         print(f"Testing accuracy of {(accuracy.compute().item() * 100):.3f}%")
+
+        print("Inference Time")
+        # Flush any residual data
+        board_shim.get_board_data()
+
+        while True:
+            collected_samples = 0
+            while collected_samples < NUM_SAMPLES:
+                while board_shim.get_board_data_count() < 1:
+                    time.sleep(0.001)
+                
+                num_to_fetch = min(50 - collected_samples, board_shim.get_board_data_count())
+                raw_data = board_shim.get_board_data(num_to_fetch)
+                if len(raw_data) == 0:
+                    continue
+                chunk = np.array(raw_data[:NUM_CHANNELS]).T
+                collected_samples += chunk.shape[0]
+            
+            filtered_samples = filter_emg_data(chunk, SAMPLING_RATE)
+            data_tensor = torch.tensor(filtered_samples, dtype=torch.float32)
+            print(data_tensor.size())
+            data_tensor = data_tensor.unsqueeze(0)
+            data_tensor = data_tensor.to(device)
+            sample_hv = encoder(data_tensor)
+            output = model(sample_hv, dot=True)
+            print(output)
+
+
 
 
     
