@@ -5,7 +5,6 @@ dll_path = os.path.join(os.path.dirname(__file__), "python")
 os.environ["PATH"] += os.pathsep + dll_path
 sys.path.append(dll_path)
 
-import serial
 import time
 from pylsl import StreamInlet, resolve_stream, StreamOutlet, StreamInfo
 import numpy as np
@@ -18,6 +17,8 @@ from dataset import EMGDataset
 from model import Encoder
 
 STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman"}
+
+# STATE_DICT = {0: "relax", 1: "clench"}
 
 NUM_SAMPLES = 2400
 NUM_CHANNELS = 4
@@ -54,23 +55,22 @@ def calibrate(state):
     print("Calibration for " + state + " done!")
     return samples
 
-ser = serial.Serial('COM3', 9600)
 
 time.sleep(2)
 
-labels = np.concatenate([np.zeros(NUM_SAMPLES // SAMPLES_PER_POINT, dtype=InterruptedError), 
+labels = np.concatenate([np.zeros(NUM_SAMPLES // SAMPLES_PER_POINT, dtype=int), 
                          np.ones(NUM_SAMPLES // SAMPLES_PER_POINT, dtype=int), 
-                         np.full(NUM_SAMPLES // SAMPLES_PER_POINT, 2, dtype=int)])
-data = np.zeros((3 * NUM_SAMPLES, NUM_CHANNELS), dtype=np.float64)
+                         np.full(NUM_SAMPLES // SAMPLES_PER_POINT, 2, dtype=int) if len(STATE_DICT) == 3 else np.array([])])
+data = np.zeros((len(STATE_DICT) * NUM_SAMPLES, NUM_CHANNELS), dtype=np.float64)
 
-for i in range(3):
+for i in range(len(STATE_DICT)):
     data[i*NUM_SAMPLES:(i+1)*NUM_SAMPLES] = calibrate(STATE_DICT[i])
 
-data.reshape(-1, SAMPLES_PER_POINT, 4)
+data = data.reshape(-1, SAMPLES_PER_POINT, 4)
 
 data_tensor = torch.tensor(data, dtype=torch.float32)
 labels_tensor = torch.tensor(labels, dtype=torch.long)
-
+print("data tensor", data_tensor.size())
 dataset = EMGDataset(data_tensor, labels_tensor)
 train_size = int(len(dataset) * 0.8)
 test_size = len(dataset) - train_size

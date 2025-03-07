@@ -16,26 +16,18 @@ from mindrove.board_shim import BoardShim, MindRoveInputParams, BoardIds
 from scipy import signal
 from model import Encoder
 
-# -------------------------
-# Parameters and settings
-# -------------------------
-NUM_SAMPLES = 10000          # Total samples to collect for each gesture calibration
+NUM_SAMPLES = 5000         # Total samples to collect for each gesture calibration
 NUM_CHANNELS = 4             # Number of EMG channels
-# Note: The original LSL code segments data into windows of 6 samples. However, for filtering to work properly,
-# a larger window may be needed. Adjust as needed:
 SAMPLES_PER_POINT = 50       
 BATCH_SIZE = 1
-# STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman"}
-STATE_DICT = {0: "relax", 1: "clench"}
+STATE_DICT = {0: "relax", 1: "clench", 2: "spiderman", 3: "gun"}
+# STATE_DICT = {0: "relax", 1: "clench"}
 SAMPLING_RATE = 500          # Hz, as assumed by your boardshim settings
 DIMENSIONS = 10000
 
 device = torch.device("mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
-# --------------------------------------------
-# Filtering function: notch and bandpass filters
-# --------------------------------------------
 def filter_emg_data(data, fs):
     """
     Apply a notch filter at 60 Hz and a bandpass filter from 4.5 Hz to 100 Hz.
@@ -68,9 +60,6 @@ def filter_emg_data(data, fs):
         filtered_data[:, ch] = channel_data
     return filtered_data
 
-# -----------------------------
-# Calibration function using boardshim
-# -----------------------------
 def calibrate(state, board_shim, fs):
     """
     Collect calibration data for a given gesture state.
@@ -115,9 +104,6 @@ def calibrate(state, board_shim, fs):
     print("Calibration for " + state + " done!")
     return filtered_samples
 
-# ----------------------------
-# Main function: setup boardshim, calibration, and data loading
-# ----------------------------
 def main():
     # Initialize boardshim
     board_id = BoardIds.MINDROVE_WIFI_BOARD
@@ -208,26 +194,34 @@ def main():
         board_shim.get_board_data()
 
         while True:
-            collected_samples = 0
-            while collected_samples < NUM_SAMPLES:
-                while board_shim.get_board_data_count() < 1:
-                    time.sleep(0.001)
+            votes = np.zeros(total_states)
+            num_votes = 0
+            while num_votes < 10:
+                collected_samples = 0
+                samples_list = []
+                while collected_samples < SAMPLES_PER_POINT:
+                    while board_shim.get_board_data_count() < 1:
+                        time.sleep(0.001)
+                    
+                    num_to_fetch = min(SAMPLES_PER_POINT - collected_samples, board_shim.get_board_data_count())
+                    raw_data = board_shim.get_board_data(num_to_fetch)
+                    if len(raw_data) == 0:
+                        continue
+                    chunk = np.array(raw_data[:NUM_CHANNELS]).T
+                    collected_samples += chunk.shape[0]
+                    samples_list.append(chunk)
                 
-                num_to_fetch = min(50 - collected_samples, board_shim.get_board_data_count())
-                raw_data = board_shim.get_board_data(num_to_fetch)
-                if len(raw_data) == 0:
-                    continue
-                chunk = np.array(raw_data[:NUM_CHANNELS]).T
-                collected_samples += chunk.shape[0]
-            
-            filtered_samples = filter_emg_data(chunk, SAMPLING_RATE)
-            data_tensor = torch.tensor(filtered_samples, dtype=torch.float32)
-            print(data_tensor.size())
-            data_tensor = data_tensor.unsqueeze(0)
-            data_tensor = data_tensor.to(device)
-            sample_hv = encoder(data_tensor)
-            output = model(sample_hv, dot=True)
-            print(output)
+                raw_samples = np.concatenate(samples_list, axis=0)[:NUM_SAMPLES]
+                
+                filtered_samples = filter_emg_data(raw_samples, SAMPLING_RATE)
+                data_tensor = torch.tensor(filtered_samples, dtype=torch.float32)
+                data_tensor = data_tensor.unsqueeze(0)
+                data_tensor = data_tensor.to(device)
+                sample_hv = encoder(data_tensor)
+                output = model(sample_hv, dot=True)
+                votes[np.argmax(output)] += 1
+                num_votes += 1
+            print(np.argmax(votes))
 
 
 
