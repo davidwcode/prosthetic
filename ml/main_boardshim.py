@@ -32,7 +32,7 @@ def main():
     board_shim = BoardShim(board_id, params)
 
     # Initalize serial port
-    # ser = serial.Serial('COM3', 9600)
+    ser = serial.Serial("/dev/cu.usbmodem21401", 9600)
     time.sleep(2)
     
     try:
@@ -118,7 +118,7 @@ def main():
         while True:
             votes = np.zeros(num_classes)
             num_votes = 0
-            while num_votes < 20:
+            while num_votes < 10:
                 filtered_data = record_emg(board_shim, SAMPLES_PER_POINT, NUM_CHANNELS, SAMPLING_RATE)
                 data_tensor = torch.tensor(filtered_data, dtype=torch.float32)
                 data_tensor = data_tensor.unsqueeze(0)
@@ -128,7 +128,7 @@ def main():
                 num_votes += 1
             action = np.argmax(votes)
             print(f"Predicted action: {STATE_DICT[action]}")
-            # ser.write(str(action).encode() + b'\n')
+            ser.write(str(action).encode() + b'\n')
 
 
 
