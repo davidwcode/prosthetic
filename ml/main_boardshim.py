@@ -31,8 +31,15 @@ def main():
     params = MindRoveInputParams()
     board_shim = BoardShim(board_id, params)
 
+    '''
+    descr = BoardShim.get_board_descr(board_id)
+    for key, val in descr.items():
+        print(f"{key}: {val}")
+    '''
+
     # Initalize serial port
-    ser = serial.Serial("/dev/cu.usbmodem21401", 9600)
+    #ser = serial.Serial("/dev/cu.usbmodem21401", 9600) # Mac
+    ser = serial.Serial("COM6", 9600) # Windows (make sure to change com port to correct port number)
     time.sleep(2)
     
     try:
@@ -62,7 +69,7 @@ def main():
             for j in range(num_points):
                 print(f"Collecting data for {state} ({j+1}/{num_points})")
                 # Collect data for each window
-                data[i*NUM_SAMPLES + j*SAMPLES_PER_POINT : i*NUM_SAMPLES + (j+1)*SAMPLES_PER_POINT] = record_emg(board_shim, SAMPLES_PER_POINT, NUM_CHANNELS, SAMPLING_RATE)
+                _, data[i*NUM_SAMPLES + j*SAMPLES_PER_POINT : i*NUM_SAMPLES + (j+1)*SAMPLES_PER_POINT] = record_emg(board_shim, SAMPLES_PER_POINT, NUM_CHANNELS, SAMPLING_RATE)
         
         # Create labels: here, for each state we create labels for each window.
         num_points_per_state = NUM_SAMPLES // SAMPLES_PER_POINT
@@ -117,18 +124,28 @@ def main():
 
         while True:
             votes = np.zeros(num_classes)
+            rotation = "None"
             num_votes = 0
             while num_votes < 10:
-                filtered_data = record_emg(board_shim, SAMPLES_PER_POINT, NUM_CHANNELS, SAMPLING_RATE)
+                rotate, filtered_data = record_emg(board_shim, SAMPLES_PER_POINT, NUM_CHANNELS, SAMPLING_RATE)
+                if rotation == "None":
+                    rotation = rotate
                 data_tensor = torch.tensor(filtered_data, dtype=torch.float32)
                 data_tensor = data_tensor.unsqueeze(0)
                 data_tensor = data_tensor.to(device)
                 output = model(data_tensor)
                 votes[torch.argmax(output)] += 1
                 num_votes += 1
-            action = np.argmax(votes)
-            print(f"Predicted action: {STATE_DICT[action]}")
-            ser.write(str(action).encode() + b'\n')
+            if rotation != "None":
+                print(f"Predicted action: Rotate {rotation}")
+                if rotation == "Left":
+                    ser.write(str(8).encode() + b'\n')
+                else:
+                    ser.write(str(9).encode() + b'\n')
+            else:
+                action = np.argmax(votes)
+                print(f"Predicted action: {STATE_DICT[action]}")
+                ser.write(str(action).encode() + b'\n')
 
 
 

@@ -40,6 +40,7 @@ def filter_emg_data(data, fs):
 def record_emg(board_shim, num_samples, num_channels, fs):
     # Flush any residual data
     board_shim.get_board_data()
+    rotation = "None"
     
     collected_samples = 0
     chunks = []
@@ -49,10 +50,16 @@ def record_emg(board_shim, num_samples, num_channels, fs):
             time.sleep(0.001)
         # Fetch available data but not more than needed
         num_to_fetch = min(num_samples - collected_samples, board_shim.get_board_data_count())
-        chunks.append(board_shim.get_board_data(num_to_fetch)[:num_channels].T)
+        cur = board_shim.get_board_data(num_to_fetch)
+        gyro_info = cur[23:26].T # 23=x, 24=y, 25=z
+        if gyro_info[0][0] > 300: # X-axis rotation
+            rotation = "Left"
+        elif gyro_info[0][0] < -300:
+            rotation = "Right"
+        chunks.append(cur[:num_channels].T)
         collected_samples += num_to_fetch
     raw_data = np.concatenate(chunks, axis=0)
-    return filter_emg_data(raw_data, fs)
+    return rotation, filter_emg_data(raw_data, fs)
 
 
 def display_calibrate(state):
