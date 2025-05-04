@@ -1,6 +1,6 @@
 # EMG Prosthetic Hand
 
-**Project VADER** is an open-source, low-cost prosthetic hand system developed by Triton NeuroTech at UC San Diego for the 2025 California Neurotechnology Conference (CNTC). The system uses surface electromyography (sEMG) signals and gyroscope data to classify hand gestures and wrist rotations in real-time using hyperdimensional computing (HDC), enabling intuitive control of a 3D-printed prosthetic arm. Our system prioritizes accessibility, using readily available components to enable wider adoption in both educational and clinical contexts. Future work will focus on expanding the gesture set, improving classification robustness across users, and creating a portable, smaller-profile setup.
+**Project VADER** is an open-source, low-cost prosthetic hand system developed by Triton NeuroTech at UC San Diego for the [2025 California Neurotechnology Conference (CNTC)](https://caneurotech.vercel.app). The system uses surface electromyography (sEMG) signals to classify hand gestures in real-time using hyperdimensional computing (HDC), enabling intuitive control of a 3D-printed prosthetic arm. Our system prioritizes accessibility, using readily available components to enable wider adoption in both educational and clinical contexts. Future work will focus on expanding the gesture set, improving classification robustness across users, and creating a portable, smaller-profile setup.
 
 ## Features
 
@@ -14,10 +14,12 @@
 
 [![Watch the video](https://img.youtube.com/vi/IQsXgWLdUmY/0.jpg)](https://www.youtube.com/watch?v=IQsXgWLdUmY)
 
-Live demo from the 2025 California Neurotechnology Conference (CNTC) at UC San Diego.
+Live demonstration from the 2025 California Neurotechnology Conference (CNTC) at UC San Diego.
+
+[Click here to view the full presentation slides (PDF)](docs/TNT%20BCI%20Comp%20CNTC%202025.pdf)
 
 
-## 🔧 Hardware Components
+## Hardware Components
 
 - Arduino Uno
 - PCA9685 16-channel Servo Driver
