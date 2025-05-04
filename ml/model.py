@@ -34,8 +34,14 @@ class HDClassifier(nn.Module):
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return self.centroid(self.encoder(input), dot=True)
     
-    def build(self, input: torch.Tensor, target: torch.Tensor):
-        self.centroid.add(self.encoder(input), target)
+    def build(self, input: torch.Tensor, target: torch.Tensor, lr=1.0):
+        self.centroid.add(self.encoder(input), target, lr=lr)
+
+    def build_online(self, input: torch.Tensor, target: torch.Tensor, lr=1.0):
+        self.centroid.add_online(self.encoder(input), target, lr=lr)
+
+    def build_adapt(self, input: torch.Tensor, target: torch.Tensor, lr=1.0):
+        self.centroid.add_adapt(self.encoder(input), target, lr=lr)
 
     def normalize(self):
         self.centroid.normalize()

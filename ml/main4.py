@@ -13,11 +13,13 @@ from tkinter import font, ttk
 from model import HDClassifier
 import serial
 
-NUM_SAMPLES = 5000
+# Only 4 classes and even faster calibration
+
+NUM_SAMPLES = 1000
 NUM_CHANNELS = 4
 SAMPLES_PER_POINT = 50
 BATCH_SIZE = 1
-STATE_DICT = {0: "Relax", 1: "Clench", 2: "Triton", 3: "L(ove)", 4: "Surfer"}
+STATE_DICT = {0: "Relax", 1: "Clench", 2: "Triton", 3: "L(ove)"}
 SAMPLING_RATE = 500
 DIMENSIONS = 10000
 GENERAL_MODEL_PATH = "general_model.pt"
@@ -150,10 +152,7 @@ class VaderGUI:
             self.board_shim = BoardShim(board_id, params)
             self.board_shim.prepare_session()
             self.board_shim.start_stream(450000)
-            
-            # Replace with your serial port
             self.ser = serial.Serial("/dev/cu.usbmodem11301", 9600)
-
             time.sleep(2)
             start = time.time()
             while time.time() - start < 10 and not self.stop_event.is_set():
