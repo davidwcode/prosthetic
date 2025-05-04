@@ -10,7 +10,7 @@
 - **Live prosthetic control** via Arduino
 - **Interactive GUI** for data collection, training, and inference
 
-## Demo Video
+## Demo Video (Youtube)
 
 [![Watch the video](https://img.youtube.com/vi/IQsXgWLdUmY/0.jpg)](https://www.youtube.com/watch?v=IQsXgWLdUmY)
 
