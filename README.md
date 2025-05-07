@@ -10,6 +10,7 @@
 - **Live prosthetic control** via Arduino
 - **Interactive GUI** for data collection, training, and inference
 
+
 ## Demo Video (Youtube)
 
 [![Watch the video](https://img.youtube.com/vi/IQsXgWLdUmY/0.jpg)](https://www.youtube.com/watch?v=IQsXgWLdUmY)
@@ -22,15 +23,19 @@ Live demonstration from the 2025 California Neurotechnology Conference (CNTC) at
 ## Hardware Components
 
 - Arduino Uno
-- PCA9685 16-channel Servo Driver
-- Servos + springs + 200 lb fishing line
-- [Inmoov 3D-printed hand](https://inmoov.fr/hand-i2)
-- [Mindrove 4 channel sEMG armband](https://mindrove.com/armband/?srsltid=AfmBOopWQQx64mu99t9k1P3LsEALoqYTAx9bPntEyNLhS9PTzZek5lZo)
+- [Mindrove 4-channel sEMG armband](https://mindrove.com/armband/?srsltid=AfmBOopWQQx64mu99t9k1P3LsEALoqYTAx9bPntEyNLhS9PTzZek5lZo)
+- [PCA9685 16-channel Servo Driver](https://www.adafruit.com/product/815)  
+- [Miuzei DS3218MG High-Torque Digital Servo](https://www.amazon.com/Miuzei-Torque-Digital-Waterproof-Control/dp/B07HNTKSZT)
+- Custom 3D-printed servo pulley (binary STL): [pulleyV3.stl](hardware/pulleyV3.stl)
+- [InMoov 3D-printed hand](https://inmoov.fr/hand-i2)
+- **Extension Springs** (3/16″x1-3/4 or 4.8mm x 44.5mm)
+- [Braided Fishing Line (200 lb, 0.75 mm red)](https://www.amazon.com/dp/B0791DC7C8?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1)  
+
 
 ## Software Overview
 
 - Real-time signal acquisition via [Boardshim](https://docs.mindrove.com/main/index.html)
-- Bandpass and notch filtering for sEMG
+- Bandpass and notch filtering for sEMG []
 - Classification using [torchhd](https://github.com/hyperdimensional-computing/torchhd)
 - GUI for live demo of calibration, training, and inference
 - Serial communication with Arduino for servo control
