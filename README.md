@@ -50,11 +50,13 @@ Navigate to the `/ml` directory and install the requirements:
 cd ml
 pip install -r requirements.txt
 ```
-
 ### 2. Setup Hardware
+In order to actually control a hand you must have a PCA 9685, 5 Servos, and an Arduino. For wiring, you can follow this guide: [Wiring Guide](https://www.instructables.com/Mastering-Servo-Control-With-PCA9685-and-Arduino/). Once the Arduino is connected to your computer, make sure to flash the `hardware.ino` file which can be found under the hardware directory.
+
+### 3. Connect Hardware
 In `main.py` (or `main4.py` if you only want 4 classes instead of 5), set the correct serial port for the Arduino. You can find the port in the Arduino IDE under Tools > Port.
 
-### 3. Run the System
+### 4. Run the System
 From the `/ml` directory, run the main script:
 
 ```bash
